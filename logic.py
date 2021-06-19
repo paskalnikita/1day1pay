@@ -91,7 +91,7 @@ def paymentsGenerator():
     incoming_salary = False
     for day in days: #PKO BANK. for logic validations only, normally you can get day by day
         if incoming_salary: 
-            # #PKO BANK. In Elixir you can do anuthing with credit
+            # #PKO BANK. In Elixir you can do anything with credit
             pass
         if day == PayCalendar.get_today():
             # do not pay forward
