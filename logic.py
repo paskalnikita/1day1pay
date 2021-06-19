@@ -19,8 +19,8 @@ class UserData():
         self.salary_credit = 6000
         self.fridays_extra_pay = 50 # can be passed as argument, provides by User in application
         self.end_of_contract = datetime.datetime.strptime('10/10/22', '%m/%d/%y')
-        self.cash_at_the_beginning_needed = True #Do this user have to pay smt. at the beginning of the month
-        self.saving_cash = 800 #paying rent/something unexpected/in case of anything you willing to hold money
+        self.cash_at_the_beginning_needed = True #Do this if user have to pay smt. at the beginning of the month
+        self.saving_cash = 800 #paying rent/something unexpected/in case of anything user willing to hold money
 
     def get_salary(self):
         return self.salary
