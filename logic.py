@@ -18,6 +18,9 @@ class UserData():
         self.salary = 6000
         self.salary_credit = 6000
         self.fridays_extra_pay = 50 # can be passed as argument, provides by User in application
+        self.end_of_contract = datetime.datetime.strptime('10/10/22', '%m/%d/%y')
+        self.cash_at_the_beginning_needed = True #Do this user have to pay smt. at the beginning of the month
+        self.saving_cash = 800 #paying rent/something unexpected/in case of anything you willing to hold money
 
     def get_salary(self):
         return self.salary
@@ -28,6 +31,17 @@ class UserData():
     def get_fridays_extra_pay(self):
         return self.fridays_extra_pay
     
+    def extra_cash_at_the_beginning_needed(self):
+        return self.cash_at_the_beginning_needed
+
+    def get_saving_cash(self):
+        return self.saving_cash
+
+    def get_day_before_end_of_contract(self):
+        # PKO BANK. It is up to you to change amount of days for user for time left to cancle this credit
+        day = self.end_of_contract - datetime.timedelta(days=1) # just by changing days when to stop
+        day = str(day).replace(" 00:00:00", "")
+        return datetime.datetime.strptime(str(day), '%Y-%m-%d').date()
 
 class PayCalendar():
     def get_today():
@@ -53,6 +67,15 @@ class PayCalendar():
 
         return last_pay_day
 
+    def get_first_pay_day(days):
+        first_pay_day = days[0]
+        for i in range(0, 7):
+            if days[i].weekday() <= 4:
+                first_pay_day = days[i]
+                return first_pay_day
+
+        return first_pay_day
+
     def calc_days(year, month):
         working_days=0
         fridays=0
@@ -77,10 +100,14 @@ def split_sum(num_of_working_days, num_of_fridays, salary, fridays_extra_pay):
 
     return daily_payment, left_for_last_pay
 
+
 #main logic
 def paymentsGenerator():
     user_data = UserData()
     salary, full_credit_left=user_data.get_salary(), user_data.get_full_credit()
+    if user_data.extra_cash_at_the_beginning_needed():
+        full_credit_left -= user_data.get_saving_cash()
+
     num_of_working_days, num_of_fridays = PayCalendar.calc_days(PayCalendar.get_year(), PayCalendar.get_month())
     daily_payment, left_for_last_pay = split_sum(num_of_working_days, num_of_fridays, salary, user_data.get_fridays_extra_pay())
     num_days = cal.monthrange(PayCalendar.get_year(), PayCalendar.get_month())[1]
@@ -89,16 +116,35 @@ def paymentsGenerator():
     payments = []
     fridays_counted=0
     incoming_salary = False
-    for day in days: #PKO BANK. for logic validations only, normally you can get day by day
+    for day in days: #PKO BANK. for logic validations only, normally you can get day by day without this loop
         if incoming_salary: 
-            # #PKO BANK. In Elixir you can do anything with credit
+            # #PKO BANK. In Elixir you can do anything with credit.
+            # This incomming transfer will payoff previous daily payments
             pass
+
         if day == PayCalendar.get_today():
             # do not pay forward
             break
 
-        last_pay_day=PayCalendar.get_last_pay_day(days)
+        if day == user_data.get_day_before_end_of_contract():
+            # stop paying if contract is ending tommorow
+            # credit left will be payed by next incoming(last by contract) salary
+            payments.append(f"{day_name} {day}, your contract is ending tommorow, paying: {daily_payment}")
+            sct = SEPACreditTransfer(debtor) # Create a SEPACreditTransfer instance
+            sct.add_transaction(creditor, daily_payment, f'Pay for {day}') # Add the transaction
+
+            full_credit_left = 0
+            break
+
         day_name = day.strftime("%A")
+        if user_data.extra_cash_at_the_beginning_needed() and day == PayCalendar.get_first_pay_day(days):
+            # pay extra cash at the begging of month if user neeeded
+            sct = SEPACreditTransfer(debtor) # Create a SEPACreditTransfer instance
+            sct.add_transaction(creditor, user_data.get_saving_cash(), f'Pay for {day}') # Add the transaction
+
+            payments.append(f"{day_name} {day}, paying extra cash: {user_data.get_saving_cash()}")
+
+        last_pay_day=PayCalendar.get_last_pay_day(days)
         if day != last_pay_day:
             if day.weekday() < 4: # mon - thu
                 payments.append(f"{day_name} {day}, paying: {daily_payment}")
@@ -126,7 +172,7 @@ def paymentsGenerator():
 
                 full_credit_left -= today_payment
 
-        if day == last_pay_day: # if last day pay all money left
+        if day == last_pay_day: # if last day - pay all the money left
             if int(full_credit_left) != 0:
                 payments.append(f"{day} is last day, paying: {full_credit_left}")
                 sct = SEPACreditTransfer(debtor) # Create a SEPACreditTransfer instance
