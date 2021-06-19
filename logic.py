@@ -109,7 +109,7 @@ def paymentsGenerator():
         full_credit_left -= user_data.get_saving_cash()
 
     num_of_working_days, num_of_fridays = PayCalendar.calc_days(PayCalendar.get_year(), PayCalendar.get_month())
-    daily_payment, left_for_last_pay = split_sum(num_of_working_days, num_of_fridays, salary, user_data.get_fridays_extra_pay())
+    daily_payment, left_for_last_pay = split_sum(num_of_working_days, num_of_fridays, full_credit_left, user_data.get_fridays_extra_pay())
     num_days = cal.monthrange(PayCalendar.get_year(), PayCalendar.get_month())[1]
     days = [datetime.date(PayCalendar.get_year(), PayCalendar.get_month(), day) for day in range(1, num_days+1)]
 
