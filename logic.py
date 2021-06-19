@@ -118,7 +118,7 @@ def paymentsGenerator():
     incoming_salary = False
     for day in days: #PKO BANK. for logic validations only, normally you can get day by day without this loop
         if incoming_salary: 
-            # #PKO BANK. In Elixir you can do anything with credit.
+            # #PKO BANK. In Elixir you can do anything with incomming salary.
             # This incomming transfer will payoff previous daily payments
             pass
 
